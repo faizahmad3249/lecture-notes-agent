@@ -1,0 +1,48 @@
+{
+  "eval_cases": [
+    {
+      "eval_case_id": "raw_text_biology_lecture",
+      "prompt": {
+        "role": "user",
+        "parts": [
+          {
+            "text": "Here is the transcript from my biology lecture today:\n\nToday we covered cell division. There are two main types: mitosis and meiosis. Mitosis produces two identical daughter cells and is used for growth and repair. It has four phases: prophase, metaphase, anaphase, and telophase. Meiosis produces four genetically unique cells and is used for sexual reproduction. It involves two rounds of division, meiosis I and meiosis II. A key concept is crossing over, which occurs during prophase I and increases genetic diversity. The cell cycle also includes interphase, during which the cell grows and copies its DNA. Checkpoints in the cell cycle ensure accurate replication before division proceeds.\n\nPlease generate study notes."
+          }
+        ]
+      }
+    },
+    {
+      "eval_case_id": "raw_text_history_lecture",
+      "prompt": {
+        "role": "user",
+        "parts": [
+          {
+            "text": "Please convert this history lecture into study notes:\n\nWorld War I began in 1914 and ended in 1918. Its main causes are remembered by the acronym MAIN: Militarism, Alliances, Imperialism, and Nationalism. The assassination of Archduke Franz Ferdinand of Austria-Hungary on June 28, 1914, was the immediate trigger. The war involved two major alliances: the Triple Entente (France, Russia, Britain) and the Triple Alliance (Germany, Austria-Hungary, Italy). Trench warfare was the dominant military tactic on the Western Front. The United States entered the war in 1917 following unrestricted submarine warfare by Germany and the Zimmermann Telegram. The Treaty of Versailles in 1919 officially ended the war and imposed heavy reparations on Germany, which many historians cite as a contributing factor to World War II."
+          }
+        ]
+      }
+    },
+    {
+      "eval_case_id": "non_educational_refusal",
+      "prompt": {
+        "role": "user",
+        "parts": [
+          {
+            "text": "Hey can you help me write notes from this? It's just a recording of me and my friends chatting at a party. We're just talking about weekend plans and gossip."
+          }
+        ]
+      }
+    },
+    {
+      "eval_case_id": "invalid_audio_path",
+      "prompt": {
+        "role": "user",
+        "parts": [
+          {
+            "text": "Please transcribe and summarize this lecture audio: /nonexistent/path/lecture.mp3"
+          }
+        ]
+      }
+    }
+  ]
+}

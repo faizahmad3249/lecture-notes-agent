@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: lecture-notes-agent
+    runtime: python
+    region: oregon           # free tier available in oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt && pip install -e .
+    startCommand: uvicorn app.fast_api_app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GOOGLE_API_KEY
+        sync: false          # marks it as a secret — you paste the value in the Render dashboard
+      - key: PYTHON_VERSION
+        value: "3.12.0"

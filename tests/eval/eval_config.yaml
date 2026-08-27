@@ -1,0 +1,49 @@
+metrics_to_run:
+  - custom_response_quality
+  - agent_turn_count
+
+custom_metrics:
+  - name: custom_response_quality
+    custom_function: |
+      import json, os
+      from google import genai
+
+      def evaluate(instance):
+          prompt = instance.get("prompt", "")
+          response = instance.get("response", "")
+          agent_data = instance.get("agent_data", "")
+
+          judge_prompt = f"""You are an expert quality assurance evaluator for an AI study-notes assistant.
+      Grade the agent response 1-5 using these criteria:
+      1 (Poor): Fails to address the query or contains incorrect information.
+      2 (Below Average): Partially addresses the query with notable gaps.
+      3 (Acceptable): Adequately answers but lacks depth or structure.
+      4 (Good): Accurate, well-structured, covers the query thoroughly.
+      5 (Excellent): Comprehensive, accurate, and excellently structured.
+
+      User Prompt: {prompt}
+      Final Response: {response}
+      Agent Trace: {agent_data}
+
+      Return ONLY valid JSON: {{"score": <1-5>, "explanation": "<reason>"}}"""
+
+          api_key = os.environ.get("GOOGLE_API_KEY")
+          client = genai.Client(api_key=api_key)
+          resp = client.models.generate_content(
+              model="gemini-3.6-flash",
+              contents=judge_prompt,
+          )
+          text = resp.text.strip()
+          # Strip markdown code fences if present
+          if text.startswith("```"):
+              text = text.split("```")[1]
+              if text.startswith("json"):
+                  text = text[4:]
+          result = json.loads(text.strip())
+          return {"score": result["score"], "explanation": result.get("explanation", "")}
+
+  - name: agent_turn_count
+    custom_function: |
+      def evaluate(instance):
+          turns = (instance.get("agent_data") or {}).get("turns", [])
+          return {'score': len(turns)}
