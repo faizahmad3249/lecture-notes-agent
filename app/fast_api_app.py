@@ -24,8 +24,11 @@ logger = logging.getLogger(__name__)
 
 setup_telemetry()
 
-allow_origins = (
-    os.getenv("ALLOW_ORIGINS", "").split(",") if os.getenv("ALLOW_ORIGINS") else None
+# Default to wildcard so the ADK Dev UI works on any domain (including Render).
+# Override by setting ALLOW_ORIGINS=https://example.com,https://other.com
+_allow_origins_env = os.getenv("ALLOW_ORIGINS", "")
+allow_origins: list[str] = (
+    _allow_origins_env.split(",") if _allow_origins_env else ["*"]
 )
 
 AGENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
