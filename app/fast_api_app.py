@@ -13,8 +13,11 @@
 # limitations under the License.
 import logging
 import os
+from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from google.adk.cli.fast_api import get_fast_api_app
 
 from app.app_utils.telemetry import setup_telemetry
@@ -32,6 +35,7 @@ allow_origins: list[str] = (
 )
 
 AGENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+STATIC_DIR = Path(__file__).parent / "static"
 # In-memory session configuration - no persistent storage
 session_service_uri = None
 
@@ -43,6 +47,26 @@ app: FastAPI = get_fast_api_app(
 )
 app.title = "lecture-notes-agent"
 app.description = "API for interacting with the Agent lecture-notes-agent"
+
+# Mount custom static assets (CSS/JS/images if added later)
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+# Override the ADK-registered "/" redirect so the root serves our frontend.
+# FastAPI evaluates routes in registration order; replacing the list entry is
+# the cleanest way to override without touching ADK internals.
+_frontend_html = (STATIC_DIR / "index.html").read_text(encoding="utf-8")
+for _i, _route in enumerate(app.routes):
+    if getattr(_route, "path", None) == "/" and getattr(_route, "methods", None) == {
+        "GET"
+    }:
+        app.routes.pop(_i)
+        break
+
+
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
+async def serve_frontend() -> HTMLResponse:
+    """Serve the user-facing Lecture Notes Agent UI."""
+    return HTMLResponse(content=_frontend_html)
 
 
 @app.post("/feedback")

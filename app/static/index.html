@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lecture Notes Agent</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #f8f9fb;
+      --surface:  #ffffff;
+      --border:   #e2e5ea;
+      --accent:   #2563eb;
+      --accent-h: #1d4ed8;
+      --text:     #1e2329;
+      --muted:    #6b7280;
+      --agent-bg: #f0f4ff;
+      --agent-border: #c7d7fd;
+      --user-bg:  #f3f4f6;
+      --error:    #dc2626;
+      --radius:   10px;
+    }
+
+    body {
+      font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ── Header ── */
+    header {
+      width: 100%;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+    }
+    .header-inner {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 18px 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo { font-size: 26px; }
+    .brand { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.01em; }
+    .brand span { color: var(--accent); }
+    .dev-link {
+      margin-left: auto;
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-decoration: none;
+    }
+    .dev-link:hover { color: var(--accent); text-decoration: underline; }
+
+    /* ── Main layout ── */
+    main {
+      width: 100%;
+      max-width: 820px;
+      padding: 28px 16px 40px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* ── Input card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 22px;
+    }
+    .card-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 4px; margin-bottom: 14px; }
+    .tab-btn {
+      padding: 6px 14px;
+      border: 1px solid var(--border);
+      background: transparent;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      color: var(--muted);
+      transition: all .15s;
+    }
+    .tab-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      font-weight: 600;
+    }
+    .tab-btn:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Textarea */
+    textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 0.92rem;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 110px;
+      color: var(--text);
+      background: var(--bg);
+      transition: border-color .15s;
+      outline: none;
+    }
+    textarea:focus { border-color: var(--accent); }
+
+    /* File upload */
+    .file-area {
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 28px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+    .file-area:hover, .file-area.over { border-color: var(--accent); background: #eff6ff; }
+    .file-area input { display: none; }
+    .file-area p { font-size: 0.88rem; color: var(--muted); }
+    .file-area strong { display: block; margin-bottom: 4px; color: var(--text); font-size: 0.95rem; }
+    .file-chosen { margin-top: 8px; font-size: 0.82rem; color: var(--accent); font-weight: 600; }
+
+    /* Quick actions */
+    .quick-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .chip {
+      padding: 5px 12px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      color: var(--muted);
+      background: var(--surface);
+      transition: all .15s;
+    }
+    .chip:hover { border-color: var(--accent); color: var(--accent); background: #eff6ff; }
+
+    /* Submit row */
+    .submit-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    #question {
+      flex: 1;
+      min-height: unset;
+      height: 42px;
+      resize: none;
+      padding: 10px 14px;
+    }
+    .btn-send {
+      white-space: nowrap;
+      padding: 10px 22px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-send:hover:not(:disabled) { background: var(--accent-h); }
+    .btn-send:disabled { opacity: .5; cursor: default; }
+
+    /* ── Conversation ── */
+    #conversation { display: flex; flex-direction: column; gap: 16px; }
+
+    .msg {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .msg-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--muted);
+    }
+    .bubble {
+      padding: 14px 18px;
+      border-radius: var(--radius);
+      font-size: 0.92rem;
+      line-height: 1.65;
+      word-break: break-word;
+    }
+    .msg.user .bubble { background: var(--user-bg); border: 1px solid var(--border); }
+    .msg.agent .bubble {
+      background: var(--agent-bg);
+      border: 1px solid var(--agent-border);
+    }
+    .msg.error .bubble { background: #fef2f2; border: 1px solid #fca5a5; color: var(--error); }
+
+    /* Markdown inside agent bubble */
+    .bubble h1 { font-size: 1.15rem; margin: 12px 0 6px; }
+    .bubble h2 { font-size: 1.02rem; margin: 12px 0 5px; border-bottom: 1px solid var(--agent-border); padding-bottom: 3px; }
+    .bubble h3 { font-size: 0.95rem; margin: 10px 0 4px; }
+    .bubble p  { margin-bottom: 8px; }
+    .bubble ul, .bubble ol { padding-left: 20px; margin-bottom: 8px; }
+    .bubble li { margin-bottom: 3px; }
+    .bubble code { background: #e8edff; padding: 1px 5px; border-radius: 4px; font-size: 0.87em; }
+    .bubble pre  { background: #1e2329; color: #e2e8f0; padding: 12px 14px; border-radius: 7px; overflow-x: auto; margin-bottom: 8px; }
+    .bubble pre code { background: transparent; color: inherit; padding: 0; }
+    .bubble table { border-collapse: collapse; width: 100%; margin-bottom: 8px; font-size: 0.88rem; }
+    .bubble th, .bubble td { border: 1px solid var(--agent-border); padding: 6px 10px; text-align: left; }
+    .bubble th { background: #dbeafe; font-weight: 600; }
+    .bubble blockquote { border-left: 3px solid var(--accent); padding-left: 12px; color: var(--muted); margin-bottom: 8px; }
+    .bubble strong { font-weight: 700; }
+
+    /* Typing indicator */
+    .typing { display: flex; align-items: center; gap: 5px; padding: 4px 0; }
+    .typing span {
+      width: 7px; height: 7px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: bounce .9s infinite ease-in-out;
+    }
+    .typing span:nth-child(2) { animation-delay: .15s; }
+    .typing span:nth-child(3) { animation-delay: .3s; }
+    @keyframes bounce {
+      0%,80%,100% { transform: translateY(0); opacity:.4; }
+      40%          { transform: translateY(-5px); opacity:1; }
+    }
+
+    /* Status bar */
+    #status {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-align: center;
+      min-height: 18px;
+    }
+    #status.err { color: var(--error); }
+
+    /* Footer */
+    footer {
+      width: 100%;
+      text-align: center;
+      padding: 16px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <span class="logo">📚</span>
+    <span class="brand">Lecture <span>Notes</span> Agent</span>
+    <a href="/dev-ui" class="dev-link">Dev UI →</a>
+  </div>
+</header>
+
+<main>
+  <!-- Input card -->
+  <div class="card">
+    <div class="card-title">Lecture Content</div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="text">Paste Text</button>
+      <button class="tab-btn" data-tab="file">Upload File</button>
+    </div>
+
+    <!-- Text tab -->
+    <div class="tab-panel active" id="tab-text">
+      <textarea id="lecture-text" placeholder="Paste your lecture notes or transcript here…" rows="5"></textarea>
+    </div>
+
+    <!-- File tab -->
+    <div class="tab-panel" id="tab-file">
+      <label class="file-area" id="file-drop">
+        <input type="file" id="file-input" accept=".txt,.md,.pdf,.doc,.docx,.mp3,.wav,.m4a,.ogg,.flac" />
+        <strong>Drop a file here or click to browse</strong>
+        <p>Supported: .txt, .md, .pdf, .doc, .docx, .mp3, .wav, .m4a, .ogg, .flac</p>
+        <div class="file-chosen" id="file-name"></div>
+      </label>
+    </div>
+
+    <!-- Quick action chips -->
+    <div class="quick-actions">
+      <span class="chip" data-prompt="Generate structured study notes from the content above.">📝 Generate Notes</span>
+      <span class="chip" data-prompt="Write a concise 3-sentence summary of the lecture content above.">⚡ Summarize</span>
+      <span class="chip" data-prompt="Extract all key terms and their definitions from the content above as a glossary table.">📖 Key Terms</span>
+      <span class="chip" data-prompt="List the 5 most important takeaways from the lecture content above.">🎯 Top Takeaways</span>
+    </div>
+
+    <!-- Question row -->
+    <div class="submit-row">
+      <textarea id="question" placeholder="Or ask a specific question about the content…" rows="1"></textarea>
+      <button class="btn-send" id="send-btn">Send ↑</button>
+    </div>
+  </div>
+
+  <!-- Status -->
+  <div id="status"></div>
+
+  <!-- Conversation -->
+  <div id="conversation"></div>
+</main>
+
+<footer>Lecture Notes Agent · powered by Gemini · <a href="/dev-ui" style="color:inherit">Dev UI</a></footer>
+
+<script>
+/* ─── Config ─────────────────────────────────────────────────── */
+const APP_NAME = 'app';
+const USER_ID  = 'user-' + Math.random().toString(36).slice(2, 9);
+let sessionId  = null;
+let busy       = false;
+
+/* ─── Tab switching ──────────────────────────────────────────── */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* ─── File handling ──────────────────────────────────────────── */
+const fileInput  = document.getElementById('file-input');
+const fileNameEl = document.getElementById('file-name');
+const fileArea   = document.getElementById('file-drop');
+let   fileText   = '';
+
+fileInput.addEventListener('change', () => loadFile(fileInput.files[0]));
+fileArea.addEventListener('dragover', e => { e.preventDefault(); fileArea.classList.add('over'); });
+fileArea.addEventListener('dragleave', () => fileArea.classList.remove('over'));
+fileArea.addEventListener('drop', e => {
+  e.preventDefault();
+  fileArea.classList.remove('over');
+  if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+});
+
+function loadFile(file) {
+  if (!file) return;
+  fileNameEl.textContent = '📎 ' + file.name;
+  const textTypes = ['text/plain','text/markdown','application/pdf',
+                     'application/msword',
+                     'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+  const audioExts = ['.mp3','.wav','.m4a','.ogg','.flac','.webm'];
+  const ext = '.' + file.name.split('.').pop().toLowerCase();
+  if (audioExts.includes(ext)) {
+    // For audio files, we tell the agent the filename — the backend transcribe_audio tool
+    // needs a server-side path; here we send the filename as context so users know the limitation.
+    fileText = `[Audio file uploaded: ${file.name}]\n\nNote: to transcribe audio the file must be accessible on the server. Please paste the transcript text in the text tab, or ask a question about the content.`;
+  } else {
+    const reader = new FileReader();
+    reader.onload = e => { fileText = e.target.result; };
+    reader.readAsText(file);
+  }
+}
+
+/* ─── Quick action chips ─────────────────────────────────────── */
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.getElementById('question').value = chip.dataset.prompt;
+    document.getElementById('question').focus();
+  });
+});
+
+/* ─── Session management ─────────────────────────────────────── */
+async function ensureSession() {
+  if (sessionId) return;
+  setStatus('Starting session…');
+  const res = await fetch(`/apps/${APP_NAME}/users/${USER_ID}/sessions`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({state: {}})
+  });
+  if (!res.ok) throw new Error(`Session creation failed: ${res.status} ${res.statusText}`);
+  const data = await res.json();
+  sessionId = data.id;
+  setStatus('');
+}
+
+/* ─── Message rendering ──────────────────────────────────────── */
+const conv = document.getElementById('conversation');
+
+function addMessage(role, html, isMarkdown = false) {
+  const msg = document.createElement('div');
+  msg.className = 'msg ' + role;
+  const label = document.createElement('div');
+  label.className = 'msg-label';
+  label.textContent = role === 'user' ? 'You' : role === 'agent' ? 'Lecture Notes Agent' : 'Error';
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  if (isMarkdown) {
+    bubble.innerHTML = marked.parse(html);
+  } else {
+    bubble.textContent = html;
+  }
+  msg.appendChild(label);
+  msg.appendChild(bubble);
+  conv.appendChild(msg);
+  msg.scrollIntoView({behavior: 'smooth', block: 'end'});
+  return bubble;
+}
+
+function addTyping() {
+  const msg = document.createElement('div');
+  msg.className = 'msg agent';
+  msg.id = 'typing-indicator';
+  const label = document.createElement('div');
+  label.className = 'msg-label';
+  label.textContent = 'Lecture Notes Agent';
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+  msg.appendChild(label);
+  msg.appendChild(bubble);
+  conv.appendChild(msg);
+  msg.scrollIntoView({behavior: 'smooth', block: 'end'});
+}
+
+function removeTyping() {
+  const el = document.getElementById('typing-indicator');
+  if (el) el.remove();
+}
+
+/* ─── Status bar ─────────────────────────────────────────────── */
+function setStatus(msg, isErr = false) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = isErr ? 'err' : '';
+}
+
+/* ─── Send ───────────────────────────────────────────────────── */
+document.getElementById('send-btn').addEventListener('click', sendMessage);
+document.getElementById('question').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+async function sendMessage() {
+  if (busy) return;
+
+  const questionEl  = document.getElementById('question');
+  const lectureText = document.getElementById('lecture-text').value.trim();
+  const question    = questionEl.value.trim();
+
+  // Build the message to send
+  let msgParts = [];
+  if (lectureText) msgParts.push('**Lecture content:**\n\n' + lectureText);
+  if (fileText)    msgParts.push('**Uploaded file content:**\n\n' + fileText);
+  if (question)    msgParts.push(question);
+
+  if (!msgParts.length) {
+    setStatus('Please add lecture content or type a question.', true);
+    return;
+  }
+
+  const fullMessage = msgParts.join('\n\n---\n\n');
+
+  busy = true;
+  document.getElementById('send-btn').disabled = true;
+  setStatus('');
+
+  // Show user message
+  addMessage('user', question || '(process lecture content)');
+
+  try {
+    await ensureSession();
+    addTyping();
+
+    const res = await fetch('/run_sse', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        app_name:    APP_NAME,
+        user_id:     USER_ID,
+        session_id:  sessionId,
+        new_message: { role: 'user', parts: [{ text: fullMessage }] },
+        streaming:   false
+      })
+    });
+
+    if (!res.ok) {
+      throw new Error(`Request failed: ${res.status} ${res.statusText}`);
+    }
+
+    // Read SSE stream
+    const reader  = res.body.getReader();
+    const decoder = new TextDecoder();
+    let   buffer  = '';
+    let   answer  = '';
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop(); // keep incomplete line
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        try {
+          const event = JSON.parse(line.slice(6));
+          // Extract final text from agent events
+          const content = event.content;
+          if (!content) continue;
+          const author = event.author || '';
+          if (author === 'user') continue;            // skip echo
+          const parts = content.parts || [];
+          for (const part of parts) {
+            if (part.text && part.text.trim()) {
+              answer += part.text;
+            }
+          }
+        } catch (_) { /* non-JSON SSE line */ }
+      }
+    }
+
+    removeTyping();
+
+    if (answer.trim()) {
+      addMessage('agent', answer.trim(), true);
+      questionEl.value = '';
+      // Don't clear lecture text so user can ask follow-ups
+    } else {
+      addMessage('error', 'No response received. Please try again.');
+    }
+
+  } catch (err) {
+    removeTyping();
+    addMessage('error', err.message);
+    setStatus(err.message, true);
+  } finally {
+    busy = false;
+    document.getElementById('send-btn').disabled = false;
+  }
+}
+</script>
+</body>
+</html>
